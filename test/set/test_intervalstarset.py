@@ -157,3 +157,32 @@ class TestIntervalStarSet(TestCase):
         np.testing.assert_array_equal(arrayConstraintd, objSetAffine.getArrayConstraintd(),
                                       "Basic Matrices are not matched")
 
+    def test_intersectPHSByIndex(self):
+        """
+        Test getMatConstraintC
+        """
+        # Create an IntervalStarSet
+        matLow: npt.ArrayLike = np.array([[3, 2, 4], [2, 1, 3]], dtype=np.float64)
+        matHigh: npt.ArrayLike = np.array([[4, 3, 5], [3, 2, 4]], dtype=np.float64)
+        IMBasisV: IntervalMatrix = IntervalMatrix(matLow=matLow, matHigh=matHigh)
+        matConstraintC: npt.ArrayLike = np.array([[1, 1], [-1, 0], [0, -1], [1, 0], [0, 1]], dtype=np.float64)
+        arrayConstraintd: npt.ArrayLike = np.array([1, 0, 0, 1, 1], dtype=np.float64)
+
+        objSet: Set = IntervalStarSet(IMBasisV, matConstraintC, arrayConstraintd)
+
+        # Index for intersection with positive half space
+        intIndex: int = 0
+
+        # Affine map
+        objSetIPHS: Set = objSet.intersectPHSByIndex(intIndex)
+        # Updated expected IMBasisV
+        np.testing.assert_array_equal(IMBasisV.getMatLow(), objSetIPHS.getMatBasisV().getMatLow(),
+                                      "Basic Matrices are not matched")
+        np.testing.assert_array_equal(IMBasisV.getMatHigh(), objSetIPHS.getMatBasisV().getMatHigh(),
+                                      "Basic Matrices are not matched")
+
+        np.testing.assert_array_equal(matConstraintC, objSetIPHS.getMatConstraintC(),
+                                      "Basic Matrices are not matched")
+
+        np.testing.assert_array_equal(arrayConstraintd, objSetIPHS.getArrayConstraintd(),
+                                      "Basic Matrices are not matched")
