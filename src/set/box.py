@@ -32,7 +32,7 @@ class Box(Set, ABC):
         self.__arrayHigh__: npt.ArrayLike = arrayHigh
 
     ############################################
-    ########## Private Methods  ################
+    ########## Method for Attributes ###########
     ############################################
     def getArrayLow(self) -> npt.ArrayLike:
         """
@@ -51,7 +51,7 @@ class Box(Set, ABC):
         return self.__arrayHigh__
 
     ############################################
-    ########## Methods for attributes  #########
+    ##########      Common Methods     #########
     ############################################
     def getDimension(self) -> int:
         """
@@ -167,8 +167,8 @@ class Box(Set, ABC):
         cartesianProduct = itertools.product(*listOfListofArrays)
         listSets: List[Set] = []
         for idx, item in enumerate(cartesianProduct):
-            arrayLow: npt.ArrayLike = np.array([arr[0] for arr in item], dtype=DataType.RealType)
-            arrayHigh: npt.ArrayLike = np.array([arr[1] for arr in item], dtype=DataType.RealType)
+            arrayLow: npt.ArrayLike = np.array([DataType.RealType(arr[0]) for arr in item], dtype=object)
+            arrayHigh: npt.ArrayLike = np.array([DataType.RealType(arr[1]) for arr in item], dtype=object)
             listSets.append(Box(arrayLow, arrayHigh))
 
         return listSets
@@ -240,8 +240,9 @@ class Box(Set, ABC):
 
         return sign
 
+
     ############################################
-    ########## Unused Methods  #################
+    ###### Unused Methods from other sets  #####
     ############################################
     def getMatBasisV(self) -> IntervalMatrix:
         """
@@ -249,8 +250,8 @@ class Box(Set, ABC):
         :return: (objIMBasisV -> IntervalMatrix )
         """
         # The following line are for just returning (not for implementation)
-        matLow: npt.ArrayLike = np.array([[]], dtype=DataType.RealType)
-        matHigh: npt.ArrayLike = np.array([[]], dtype=DataType.RealType)
+        matLow: npt.ArrayLike = np.array([[]], dtype=object)
+        matHigh: npt.ArrayLike = np.array([[]], dtype=object)
         objIMBasisV: IntervalMatrix = IntervalMatrix(matLow, matHigh)
         return objIMBasisV
 
@@ -260,7 +261,7 @@ class Box(Set, ABC):
         :return: (matConstraintC -> npt.ArrayLike )
         """
         # The following line are for just returning (not for implementation)
-        matConstraintC: npt.ArrayLike = np.array([[]], dtype=DataType.RealType)
+        matConstraintC: npt.ArrayLike = np.array([[]], dtype=object)
         return matConstraintC
 
     def getArrayConstraintd(self) -> npt.ArrayLike:
@@ -269,7 +270,7 @@ class Box(Set, ABC):
         :return: (arrayConstraintd -> npt.ArrayLike )
         """
         # The following line are for just returning (not for implementation)
-        arrayConstraintd: npt.ArrayLike = np.array([], dtype=DataType.RealType)
+        arrayConstraintd: npt.ArrayLike = np.array([], dtype=object)
         return arrayConstraintd
 
     def getArrayPredicateLow(self) -> npt.ArrayLike:
@@ -278,7 +279,7 @@ class Box(Set, ABC):
         :return: (arrayPredicateLow -> npt.ArrayLike)
         """
         # The following line are for just returning (not for implementation)
-        arrayPredicateLow: npt.ArrayLike = np.array([], dtype=DataType.RealType)
+        arrayPredicateLow: npt.ArrayLike = np.array([], dtype=object)
         return arrayPredicateLow
 
     def getArrayPredicateHigh(self) -> npt.ArrayLike:
@@ -287,7 +288,7 @@ class Box(Set, ABC):
         :return: (arrayPredicateHigh -> npt.ArrayLike)
         """
         # The following line are for just returning (not for implementation)
-        arrayPredicateHigh: npt.ArrayLike = np.array([], dtype=DataType.RealType)
+        arrayPredicateHigh: npt.ArrayLike = np.array([], dtype=object)
         return arrayPredicateHigh
 
     def getArrayStateLow(self) -> npt.ArrayLike:
@@ -296,7 +297,7 @@ class Box(Set, ABC):
         :return: (arrayStateLow -> npt.ArrayLike)
         """
         # The following line are for just returning (not for implementation)
-        arrayStateLow: npt.ArrayLike = np.array([], dtype=DataType.RealType)
+        arrayStateLow: npt.ArrayLike = np.array([], dtype=object)
         return arrayStateLow
 
     def getArrayStateHigh(self) -> npt.ArrayLike:
@@ -305,7 +306,7 @@ class Box(Set, ABC):
         :return: (arrayStateHigh -> npt.ArrayLike)
         """
         # The following line are for just returning (not for implementation)
-        arrayStateHigh: npt.ArrayLike = np.array([], dtype=DataType.RealType)
+        arrayStateHigh: npt.ArrayLike = np.array([], dtype=object)
         return arrayStateHigh
 
     def intersectPHSByIndex(self, intIndex: int) -> Set:
@@ -316,8 +317,8 @@ class Box(Set, ABC):
         :type intIndex: int
         :return: (objSetIPHS-> IntervalStarSet) intersection between self and x[intIndex]>=0
         """
-        arrayLow: npt.ArrayLike = np.array([[]], dtype=DataType.RealType)
-        arrayHigh: npt.ArrayLike = np.array([[]], dtype=DataType.RealType)
+        arrayLow: npt.ArrayLike = np.array([[]], dtype=object)
+        arrayHigh: npt.ArrayLike = np.array([[]], dtype=object)
         objSetIPHS: Set = Box(arrayLow, arrayHigh)
         return objSetIPHS
 
@@ -329,9 +330,11 @@ class Box(Set, ABC):
         :type intIndex: int
         :return: (objSetINHS -> IntervalStarSet) intersection between self and x[intIndex]<=0
         """
-        arrayLow: npt.ArrayLike = np.array([[]], dtype=DataType.RealType)
-        arrayHigh: npt.ArrayLike = np.array([[]], dtype=DataType.RealType)
+        arrayLow: npt.ArrayLike = np.array([[]], dtype=object)
+        arrayHigh: npt.ArrayLike = np.array([[]], dtype=object)
         objSetINHS: Set = Box(arrayLow, arrayHigh)
         return objSetINHS
 
-
+    ############################################
+    ########## Unused Common Methods ###########
+    ############################################

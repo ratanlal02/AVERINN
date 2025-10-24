@@ -132,18 +132,21 @@ class IntervalStarSet(Set, ABC):
         Return the number of predicates
         :return: (intPredicates -> int)
         """
-        return self.__matConstraintC__.shape()[0]
+        return self.__matConstraintC__.shape[0]
 
     ############################################
     ########## Common Methods  ################
     ############################################
-    def linearMap(self, objIMWeight: IntervalMatrix) -> Set:
+    def linearMap(self, matLow: npt.ArrayLike, matHigh: npt.ArrayLike = None) -> Set:
         """
         Compute affine map without input of an interval star set
-        :param objIMWeight: interval matrix for weight
-        :type objIMWeight: IntervalMatrix
+        :param matLow: lower matrix of an interval matrix for weight
+        :type matLow: npt.ArrayLike
+        :param matHigh: upper matrix of an interval matrix for weight
+        :type matHigh: npt.ArrayLike
         :return: (objISS -> 'IntervalStarSet') an instance of an interval star set
         """
+        objIMWeight: IntervalMatrix = IntervalMatrix(matLow, matHigh)
         # interval matrix multiplication
         objIMBasisnewV: IntervalMatrix = objIMWeight.product(self.__objIMBasisV__)
 
@@ -153,16 +156,23 @@ class IntervalStarSet(Set, ABC):
         # return affine map without input of an interval star set
         return objSet
 
-    def affineMap(self, objIMWeight: IntervalMatrix, objIAb: IntervalArray) -> Set:
+    def affineMap(self, matLow: npt.ArrayLike, arrayLow: npt.ArrayLike, matHigh: npt.ArrayLike=None,
+                  arrayHigh: npt.ArrayLike = None) -> Set:
         """
         Affine mapping of the star set
-        :param objIMWeight: an instance of an interval matrix for weight
-        :type objIMWeight: IntervalMatrix
-        :param objIAb: an instance of an interval array for bias
-        :type objIAb: IntervalArray
+        :param matLow: lower matrix an interval matrix for weight
+        :type matLow: npt.ArrayLike
+        :param matHigh: upper matrix an interval matrix for weight
+        :type matHigh: npt.ArrayLike
+        :param arrayLow: lower array of an interval array for bias
+        :type arrayLow: npt.ArrayLike
+        :param arrayHigh: upper array of an interval array for bias
+        :type arrayHigh: npt.ArrayLike
         :return: (objISS -> IntervalStarSet) an instance of IntervalStarSet representing WX+b,
                 where X is a self
         """
+        objIMWeight: IntervalMatrix = IntervalMatrix(matLow, matHigh)
+        objIAb: IntervalArray = IntervalArray(arrayLow, arrayHigh)
         # interval matrix multiplication
         objIMBasisnewV: IntervalMatrix = objIMWeight.product(self.__objIMBasisV__)
 
@@ -264,7 +274,7 @@ class IntervalStarSet(Set, ABC):
         c2: int = np.shape(objISS.getMatConstraintC())[1]
 
         matConstraintC: npt.ArrayLike = np.block([[self.__matConstraintC__, np.zeros((r1, c2))],
-                                                  [np.zeros((r2, c1)), objISS.getMatConstraintC()]])
+                                                           [np.zeros((r2, c1)), objISS.getMatConstraintC()]])
 
         # Vertical concatenation of column vectors arrayConstraintd of both self and objISS
         arrayConstraintd: npt.ArrayLike = np.concatenate((self.__arrayConstraintd__,
@@ -356,7 +366,7 @@ class IntervalStarSet(Set, ABC):
         One dimensional array for the lower end point fo the box
         """
         # The following line are for just returning (not for implementation)
-        arrayLow: npt.ArrayLike = np.array([], dtype=DataType.RealType)
+        arrayLow: npt.ArrayLike = np.array([], dtype=object)
         return arrayLow
 
     def getArrayHigh(self) -> npt.ArrayLike:
@@ -366,7 +376,7 @@ class IntervalStarSet(Set, ABC):
         One dimensional array for the upper end point fo the box
         """
         # The following line are for just returning (not for implementation)
-        arrayHigh: npt.ArrayLike = np.array([], dtype=DataType.RealType)
+        arrayHigh: npt.ArrayLike = np.array([], dtype=object)
         return arrayHigh
 
     ############################################
@@ -377,7 +387,7 @@ class IntervalStarSet(Set, ABC):
         Returns the dimension of the IntervalStarSet instance
         :return: (intDim -> int)
         """
-        return self.__objIMBasisV__.
+        return self.__objIMBasisV__.getNumberOfRows()
 
     def convexHull(self, objSet: Set) -> Set:
         """
@@ -420,10 +430,9 @@ class IntervalStarSet(Set, ABC):
         :return: (arrayPoint -> npt.ArrayLike)
         """
         # The following line are for just returning (not for implementation)
-        arrayPoint: npt.ArrayLike = np.array([], dtype=DataType.RealType)
+        arrayPoint: npt.ArrayLike = np.array([], dtype=object)
 
         return arrayPoint
-
 
     def display(self) -> str:
         """

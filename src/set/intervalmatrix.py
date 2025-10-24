@@ -107,8 +107,8 @@ class IntervalMatrix:
         # Compute lower and upper bound on interval matrix
         row: int = self.getNumberOfRows()
         col: int = self.getNumberOfColumns()
-        matLow: npt.ArrayLike = np.array([[0.0 for j in range(col)] for i in range(row)], dtype=DataType.RealType)
-        matHigh: npt.ArrayLike = np.array([[0.0 for j in range(col)] for i in range(row)], dtype=DataType.RealType)
+        matLow: npt.ArrayLike = np.array([[0.0 for j in range(col)] for i in range(row)], dtype=np.float64)
+        matHigh: npt.ArrayLike = np.array([[0.0 for j in range(col)] for i in range(row)], dtype=np.float64)
         for i in range(row):
             for j in range(col):
                 matLow[i][j] = min(self.__matLow__[i][j], objIM.__matLow__[i][j])
@@ -132,10 +132,10 @@ class IntervalMatrix:
         matHighHigh: npt.ArrayLike = np.matmul(self.__matHigh__, objIM.getMatHigh())
 
         # Compute lower and upper bound on interval matrix
-        row: int = self.getNumberOfRows()
-        col: int = self.getNumberOfColumns()
-        matLow: npt.ArrayLike = np.array([[0.0 for j in range(col)] for i in range(row)], dtype=DataType.RealType)
-        matHigh: npt.ArrayLike = np.array([[0.0 for j in range(col)] for i in range(row)], dtype=DataType.RealType)
+        row: int = matLowLow.shape[0]
+        col: int = matLowLow.shape[1]
+        matLow: npt.ArrayLike = np.array([[0.0 for j in range(col)] for i in range(row)], dtype=np.float64)
+        matHigh: npt.ArrayLike = np.array([[0.0 for j in range(col)] for i in range(row)], dtype=np.float64)
         for i in range(row):
             for j in range(col):
                 matLow[i][j] = min(matLowLow[i][j], matLowHigh[i][j], matHighLow[i][j], matHighHigh[i][j])

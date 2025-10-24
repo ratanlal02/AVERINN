@@ -4,6 +4,7 @@ import numpy.typing as npt
 import numpy as np
 from src.gnn.gnn import GNN
 from src.gnn.gnnuts import GNNUTS
+from src.parser.parseruts import ParserUTS
 
 
 class TestGNNUTS(TestCase):
@@ -24,7 +25,7 @@ class TestGNNUTS(TestCase):
                                               3: np.array([1, 1, 1, 1], dtype='f'),
                                               4: np.array([1], dtype='f')}
 
-        objGNN: GNN = GNNUTS.toStandardGNN(dictNeurons, dictWeight, dictBias)
+        objGNN: GNN = ParserUTS.toStandardGNN(dictNeurons, dictWeight, dictBias)
         # Test neural network configuration
         self.assertDictEqual(dictNeurons, objGNN.getDictNumNeurons(),
                              "Network configuration is not the same")
@@ -59,7 +60,7 @@ class TestGNNUTS(TestCase):
                                               4: np.array([1], dtype='f')}
 
         # Actual GNN instance creation
-        objGNN: GNN = GNNUTS.toIntervalGNN(dictNeurons, dictWeight, dictWeight, dictBias, dictBias)
+        objGNN: GNN = ParserUTS.toIntervalGNN(dictNeurons, dictWeight, dictWeight, dictBias, dictBias)
         # Test interval neural network configuration
         self.assertDictEqual(dictNeurons, objGNN.getDictNumNeurons(),
                              "Network configuration is not the same")
