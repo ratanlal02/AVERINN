@@ -117,6 +117,17 @@ class IntervalStarSet(Set, ABC):
         """
         return self.__arrayStateHigh__
 
+    def getLowerBound(self) -> npt.ArrayLike:
+        """
+        Return the lower bound the IntervalStarSet
+        """
+
+
+    def getUpperBound(self) -> npt.ArrayLike:
+        """
+        Return the upper bound the IntervalStarSet
+        """
+
     ############################################
     ########## Methods for only ISS    #########
     ############################################
@@ -286,6 +297,17 @@ class IntervalStarSet(Set, ABC):
         # Return minkowski sum of two ISSs
         return objSumISS
 
+    def getRange(self) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
+        """
+        Return the range of the IntervalStarSet
+        """
+        # Encode Interval Star Set in Gurobi
+        grbModel, dictVars = self.__encode__()
+        objSolver: Solver = Gurobi(grbModel, dictVars)
+        objSet: Set = objSolver.outputRange()
+        rangeISS: Tuple[npt.ArrayLike, npt.ArrayLike] = (objSet.getArrayLow(), objSet.getArrayHigh())
+        return rangeISS
+
     def isEmpty(self) -> bool:
         """
         Checks if the set is empty
@@ -298,6 +320,17 @@ class IntervalStarSet(Set, ABC):
             return False
         else:
             return True
+
+    def getModelVars(self) -> Tuple[Model, Dict[int, Dict[int, Var]]]:
+        """"
+        Get encoding of a set and dictionary of variables
+        :return: (ModelVars -> Tuple[Model, Dict[Dict[int, Var]]])
+        """
+        # Encode Interval Star Set in Gurobi
+        grbModel, dictVars = self.__encode__()
+
+        # Return Model and DictVars
+        return grbModel, dictVars
 
     ############################################
     ############## Private Methods #############

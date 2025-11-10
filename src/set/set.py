@@ -96,21 +96,6 @@ class Set(metaclass=ABCMeta):
         """
         pass
 
-    @abstractmethod
-    def getNumOfPredVars(self) -> int:
-        """
-        Return the number of predicate variables
-        :return: (intPredVars -> int)
-        """
-        pass
-
-    @abstractmethod
-    def getNumOfPredicates(self) -> int:
-        """
-        Return the number of predicates
-        :return: (intPredicates -> int)
-        """
-        pass
     ###################################################
     #####       Common methods for all sets       #####
     ###################################################
@@ -223,11 +208,24 @@ class Set(metaclass=ABCMeta):
         """
         pass
 
+    def getModelVars(self) -> Tuple[Model, Dict[int, Dict[int, Var]]]:
+        """"
+        Get encoding of a set and dictionary of variables
+        :return: (ModelVars -> Tuple[Model, Dict[Dict[int, Var]]])
+        """
+        pass
+
     @abstractmethod
     def isEmpty(self) -> bool:
         """
         Checks if the set is empty
         :return: (status -> bool)
+        """
+        pass
+
+    def getRange(self) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
+        """
+        Return the range of the IntervalStarSet
         """
         pass
 

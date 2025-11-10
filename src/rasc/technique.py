@@ -32,14 +32,4 @@ class Technique(metaclass=ABCMeta):
         """
         pass
 
-    @abstractmethod
-    def checkSatisfy(self, objTargetSet: Set) -> bool:
-        """
-        Return safety of GNN instance against unsafe set
-        :param objTargetSet: a Set instance
-        :type objTargetSet: Set
-        :return: (status -> bool)
-        True if no valuation of GNN satisfies unsafe set
-        otherwise false
-        """
-        pass
+

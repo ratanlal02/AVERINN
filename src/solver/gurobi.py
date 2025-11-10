@@ -50,9 +50,9 @@ class Gurobi(Solver, ABC):
         # check the feasibility of the model
         self.__model__.setObjective(1, GRB.MAXIMIZE)
         #self.__model__.write('./model.lp')
-        print("Checking satisfy start")
+        #print("Checking satisfy start")
         self.__model__.optimize()
-        print("Checking satisfy stop")
+        #print("Checking satisfy stop")
         # check the feasibility status
 
         if self.__model__.Status == GRB.INFEASIBLE:
@@ -64,7 +64,7 @@ class Gurobi(Solver, ABC):
         else:
             return True
 
-    def getInstance(self, varMap: Dict[Var, Var]) -> Dict[int, Dict[int, DataType.RealType]]:
+    def getInstance(self) -> Dict[int, Dict[int, DataType.RealType]]:
         """
         Extract a satisfiable instance of the model
         :return: (dictSatInstance -> Dict[int, Dict[int, float]])
@@ -83,7 +83,7 @@ class Gurobi(Solver, ABC):
             for intLayerNum in dictVarsX.keys():
                 dictTemp: Dict[int, DataType.RealType] = dict()
                 for id in dictVarsX[intLayerNum].keys():
-                    y = varMap[dictVarsX[intLayerNum][id]].x
+                    y = dictVarsX[intLayerNum][id].x
                     #dictTemp[id] = round(y, 7)
                     dictTemp[id] = DataType.RealType(y)
                     # Log.message(str(dictVarsX[inLayer][id].x) + " ")
@@ -123,7 +123,7 @@ class Gurobi(Solver, ABC):
         factor = 10.0 ** decimals
         return int(number * factor) / factor
 
-    def outputRange(self, varMap: Dict[Var, Var]) -> Set:
+    def outputRange(self) -> Set:
         """
         Find output range of the model for the output variables
         :param varMap: dictionary between gurobi variables
@@ -134,36 +134,36 @@ class Gurobi(Solver, ABC):
         dictOutputVars: Dict[int, Var] = self.__dictVarsX__[max(self.__dictVarsX__.keys())]
         status: bool = self.satisfy()
         if not status:
-            arrayLow: npt.ArrayLike = np.array([DataType.RealType(2.0) for i in range(len(dictOutputVars))], dtype=object)
-            arrayHigh: npt.ArrayLike = np.array([DataType.RealType(1.0) for i in range(len(dictOutputVars))], dtype=object)
+            arrayLow: npt.ArrayLike = np.array([2.0 for i in range(len(dictOutputVars))], dtype=np.float64)
+            arrayHigh: npt.ArrayLike = np.array([1.0 for i in range(len(dictOutputVars))], dtype=np.float64)
             objSet: Set = Box(arrayLow, arrayHigh)
             return objSet
         # disabled log in optimize function
         self.__model__.setParam('OutputFlag', 0)
         # declare low and high array
-        cvecLow: npt.ArrayLike = np.array([DataType.RealType(0.0) for idName in dictOutputVars.keys()], dtype=object)
-        cvecHigh: npt.ArrayLike = np.array([DataType.RealType(0.0) for idName in dictOutputVars.keys()], dtype=object)
+        arrayLow: npt.ArrayLike = np.array([0.0 for idName in dictOutputVars.keys()], dtype=np.float64)
+        arrayHigh: npt.ArrayLike = np.array([0.0 for idName in dictOutputVars.keys()], dtype=np.float64)
         # set objective function for each variable
         for idName in dictOutputVars.keys():
-            self.__model__.setObjective(varMap[dictOutputVars[idName]])
+            self.__model__.setObjective(dictOutputVars[idName])
             # For upper bound of an output variable
             self.__model__.ModelSense = GRB.MAXIMIZE
-            print("Checking feasibility for Maximum start")
+            #print("Checking feasibility for Maximum start")
             self.__model__.optimize()
-            print("Checking feasibility for Maximum stop")
+            #print("Checking feasibility for Maximum stop")
             #print(self.__model__.Status)
             self.__model__.write('./model.lp')
             self.__model__.write('./model.sol')
             #self.__model__.computeIIS()
             #print("Print unsatisfiable constraints")
             #self.__model__.write("./model.ilp")
-            cvecHigh[idName - 1] = self.__extractOptValue__()
+            arrayHigh[idName - 1] = self.__extractOptValue__()
             # For lower bound of an output variable
             self.__model__.ModelSense = GRB.MINIMIZE
-            print("Checking feasibility for Minimum start")
+            #print("Checking feasibility for Minimum start")
             self.__model__.optimize()
-            print("Checking feasibility for Minimum stop")
+            #print("Checking feasibility for Minimum stop")
             self.__model__.write('./model.sol')
-            cvecLow[idName - 1] = self.__extractOptValue__()
-        objSet: Set = Box(cvecLow, cvecHigh)
+            arrayLow[idName - 1] = self.__extractOptValue__()
+        objSet: Set = Box(arrayLow, arrayHigh)
         return objSet

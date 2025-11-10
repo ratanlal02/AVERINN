@@ -7,6 +7,7 @@ from typing import List
 from src.set.intervalstarset import IntervalStarSet
 from src.set.set import Set
 from src.types.datatype import DataType
+from src.utilities.log import Log
 
 
 class Relu:
@@ -40,6 +41,7 @@ class Relu:
         intDim: int = objSet.getDimension()
         listSets: List[Set] = [objSet]
         for i in range(intDim):
+            Log.message("For neurons " + str(i+1)+"\n")
             tempListSets: List[Set] = []
             for S in listSets:
                 objSetIPHSi: Set = S.intersectPHSByIndex(i)
@@ -49,6 +51,7 @@ class Relu:
                 if not(objSetINHSi.isEmpty()):
                     tempListSets.append(objSetINHSi)
             listSets = tempListSets
+            Log.message("Number of sets " + str(len(listSets))+"\n")
 
         return listSets
 

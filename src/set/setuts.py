@@ -7,7 +7,8 @@ from typing import List, Dict
 from gurobipy import Model, GRB, quicksum, Var
 
 from src.set.box import Box
-from src.set.grbset import GRBSet
+from src.set.intervalmatrix import IntervalMatrix
+from src.set.intervalstarset import IntervalStarSet
 from src.set.set import Set
 import numpy.typing as npt
 import numpy as np
@@ -23,146 +24,6 @@ class SetUTS:
     """
     Common functionality related to Set
     """
-
-    @staticmethod
-    def encodeSet(grbModel: Model, objSet: Set, stateVars) -> Model:
-        """
-        Encode a set into a gurobi model
-        :param grbModel: an instance of a gurobi model
-        :type grbModel: Model
-        :param objSet: an instance of a Set
-        :type objSet: Set
-        :param stateVars: list of gurobi variables
-        :type stateVars: List[Var]
-        :return: (grbModel -> Model)
-        """
-        intDim: int = len(stateVars)
-        if isinstance(objSet, Box):
-            arrayLow: npt.ArrayLike = objSet.getLowerBound()
-            arrayHigh: npt.ArrayLike = objSet.getUpperBound()
-            for j in range(intDim):
-                grbModel.addConstr(stateVars[j] >= np.float64(arrayLow[j]))
-                grbModel.addConstr(stateVars[j] <= np.float64(arrayHigh[j]))
-
-        else:
-            objModel, dictVars = objSet.getModelAndDictVars()
-            numVars: int = objModel.NumVars
-            listVars: List[Var] = objModel.getVars()
-            for constr in objModel.getConstrs():
-                listCoeff: List[float] = []
-                constantTerm = 0.0
-                for i in range(numVars):
-                    listCoeff.append(objModel.getCoeff(constr, listVars[i]))
-                constantTerm = constr.getAttr("rhs")
-                if constr.Sense == GRB.LESS_EQUAL:
-                    grbModel.addConstr(
-                        quicksum(stateVars[i] * listCoeff[i] for i in range(numVars)) <= constantTerm)
-                elif constr.Sense == GRB.GREATER_EQUAL:
-                    grbModel.addConstr(
-                        quicksum(stateVars[i] * listCoeff[i] for i in range(numVars)) >= constantTerm)
-                else:
-                    grbModel.addConstr(
-                        quicksum(stateVars[i] * listCoeff[i] for i in range(numVars)) == constantTerm)
-        # Update gurobi model
-        grbModel.update()
-
-        # Return the updated gurobi model
-        return grbModel
-
-    @staticmethod
-    def getNonIntersectByIndices(objSetOne: Set, objSetTwo: Set, listIndices: List[int], solverType: SolverType) -> \
-            Dict[int, bool]:
-        """
-        Return dictionary between indices and status that checks whether a point is common in both sets
-        with respect to indices
-        :param objSetOne: an instance of Set
-        :type objSetOne: Set
-        :param objSetTwo: an instance of Set
-        :type objSetTwo: Set
-        :param listIndices: list of indices
-        :type listIndices: List[int]
-        :param solverType: solver type
-        :type solverType: SolverType
-        :return: (dictIndices -> Dict[int, bool])
-        """
-        dictIndices: Dict[int, bool] = dict()
-        intDim: int = objSetOne.getDimension()
-        numVars: int = 2 * intDim
-
-        grbModel: Model = Model()
-        stateVars: List[Var] = []
-        for i in range(numVars):
-            stateVars.append(grbModel.addVar(lb=-np.float64('inf'), vtype=GRB.CONTINUOUS, name='x' + str(i)))
-
-        # Encoding first set
-        stateVarsForSetOne: List[Var] = stateVars[0: intDim]
-        grbModel = SetUTS.encodeSet(grbModel, objSetOne, stateVarsForSetOne)
-        # Encode second set
-        stateVarsForSetTwo: List[Var] = stateVars[intDim: numVars]
-        grbModel = SetUTS.encodeSet(grbModel, objSetTwo, stateVarsForSetTwo)
-        Log.message("           Constraints for post set followed by Concrete set\n")
-        for intIndex in listIndices:
-            grbModelCopy: Model = grbModel.copy()
-            varMap = {v: grbModelCopy.getVarByName(v.varName) for v in grbModel.getVars()}
-            grbModelCopy.addConstr((varMap[stateVars[intIndex - 1]] == varMap[stateVars[intIndex - 1 + intDim]]))
-            grbModelCopy.update()
-            objSet: Set = GRBSet(grbModelCopy, None)
-            Log.message(objSet.display() + "\n")
-            if solverType == SolverType.Gurobi:
-                objSolver: Solver = Gurobi(grbModelCopy, None)
-                status = objSolver.satisfy()
-                if not (status):
-                    dictIndices[intIndex] = True
-                else:
-                    dictIndices[intIndex] = False
-
-        return dictIndices
-
-    @staticmethod
-    def getNonIntersectBySetIndices(objSetOne: Set, objSetTwo: Set, listIndices: List[int], solverType: SolverType) \
-            -> bool:
-        """
-        Return dictionary between indices and status that checks whether a point is common in both sets
-        with respect to indices
-        :param objSetOne: an instance of Set
-        :type objSetOne: Set
-        :param objSetTwo: an instance of Set
-        :type objSetTwo: Set
-        :param listIndices: list of indices
-        :type listIndices: List[int]
-        :param solverType: solver type
-        :type solverType: SolverType
-        :return: (status -> bool)
-        True means that there is no intersection sets for the set of indices
-        """
-        NonIntersectStatus: bool = False
-        intDim: int = objSetOne.getDimension()
-        numVars: int = 2 * intDim
-
-        grbModel: Model = Model()
-        stateVars: List[Var] = []
-        for i in range(numVars):
-            stateVars.append(grbModel.addVar(lb=-np.float64('inf'), vtype=GRB.CONTINUOUS, name='x' + str(i)))
-
-        # Encoding first set
-        stateVarsForSetOne: List[Var] = stateVars[0: intDim]
-        grbModel = SetUTS.encodeSet(grbModel, objSetOne, stateVarsForSetOne)
-
-        # Encode second set
-        stateVarsForSetTwo: List[Var] = stateVars[intDim: numVars]
-        grbModel = SetUTS.encodeSet(grbModel, objSetTwo, stateVarsForSetTwo)
-
-        for intIndex in listIndices:
-            grbModel.addConstr((stateVars[intIndex - 1] == stateVars[intIndex - 1 + intDim]))
-        if solverType == SolverType.Gurobi:
-            objSolver: Solver = Gurobi(grbModel, None)
-            status = objSolver.satisfy()
-            if not (status):
-                NonIntersectStatus = True
-            else:
-                NonIntersectStatus = False
-
-        return NonIntersectStatus
 
     @staticmethod
     def displayLinConstr(A: npt.ArrayLike, b: npt.ArrayLike):
@@ -228,9 +89,43 @@ class SetUTS:
         :return: (listOfSet -> List[Set])
         """
         intDim: int = listOfSets[0].getDimension()
-        arrayLow: npt.ArrayLike = [min([objSet.getLowerBound()[i] for objSet in listOfSets]) for i in range(intDim)]
-        arrayHigh: npt.ArrayLike = [max([objSet.getUpperBound()[i] for objSet in listOfSets]) for i in range(intDim)]
+        arrayLow: npt.ArrayLike = [min([objSet.getRange()[0][i] for objSet in listOfSets]) for i in range(intDim)]
+        arrayHigh: npt.ArrayLike = [max([objSet.getRange()[1][i] for objSet in listOfSets]) for i in range(intDim)]
 
         objSet: Set = Box(arrayLow, arrayHigh)
 
+        return objSet
+
+    @staticmethod
+    def toIntervalStarSet(objSet: Set) -> Set:
+        """
+        Convert a given get into IntervalStarSet as a Set
+        """
+        rangeSet = objSet.getRange()
+        arrayLow = rangeSet[0]
+        arrayHigh = rangeSet[1]
+        intDim = objSet.getDimension()
+        # define matBasisV, that is, center point and vertices
+        matBasisVLow = []
+        for i in range(intDim):
+            temp = [0.0 for j in range(intDim + 1)]
+            temp[0] = (arrayLow[i] + arrayHigh[i]) / 2
+            temp[i + 1] = (arrayHigh[i] - arrayLow[i]) / 2
+            matBasisVLow.append(temp)
+        matBasisVLow = np.array(matBasisVLow, dtype=np.float64)
+        objIMBasisV: IntervalMatrix = IntervalMatrix(matBasisVLow, matBasisVLow)
+        # define constraint matrix for -1 <=a[1]<=1, ....
+        matConstraintC = []
+        for i in range(intDim):
+            temp = [0.0 for j in range(intDim)]
+            temp[i] = 1
+            matConstraintC.append(temp)
+            temp = [0 for j in range(intDim)]
+            temp[i] = -1
+            matConstraintC.append(temp)
+        matConstraintC = np.array(matConstraintC)
+
+        arrayConstraintd = np.array([1 for j in range(2 * intDim)])
+
+        objSet: Set = IntervalStarSet(objIMBasisV, matConstraintC, arrayConstraintd)
         return objSet

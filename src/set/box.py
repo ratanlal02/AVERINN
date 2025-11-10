@@ -6,7 +6,7 @@ from abc import ABC
 from typing import List, Tuple, Dict
 import numpy as np
 import numpy.typing as npt
-from gurobipy import Model, Var
+from gurobipy import Model, Var, GRB
 
 from src.set.intervalmatrix import IntervalMatrix
 from src.set.set import Set
@@ -188,7 +188,7 @@ class Box(Set, ABC):
         # Return sign for all the dimensions
         return listSign
 
-    def toAbsoluteArray(self) -> npt.ArrayLike:
+    def toAbsolute(self) -> npt.ArrayLike:
         """
         Returns the absolute value of the set
         :return: (arrayPoint -> npt.ArrayLike)
@@ -208,6 +208,24 @@ class Box(Set, ABC):
             if self.__arrayLow__[i] > self.__arrayHigh__[i]:
                 return True
         return False
+
+    def getModelVars(self) -> Tuple[Model, Dict[int, Dict[int, Var]]]:
+        """"
+        Get encoding of a set and dictionary of variables
+        :return: (ModelVars -> Tuple[Model, Dict[Dict[int, Var]]])
+        """
+        # Encode Interval Star Set in Gurobi
+        grbModel, dictVars = self.__encode__()
+
+        # Return Model and DictVars
+        return grbModel, dictVars
+
+    def getRange(self) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
+        """
+        Return the range of the Box
+        """
+        rangeBox: Tuple[npt.ArrayLike, npt.ArrayLike] = (self.__arrayLow__, self.__arrayHigh__)
+        return rangeBox
 
     def display(self) -> str:
         """
@@ -240,6 +258,32 @@ class Box(Set, ABC):
 
         return sign
 
+    def __encode__(self) -> Tuple[Model, Dict[int, Dict[int, Var]]]:
+        """"
+        Encode Interval Star Set into Gurobi format
+        :return: (grbModel -> Model)
+        """
+        # Create state variables
+        intDim: int = self.getDimension()
+        listStateVars: List[str] = ['x_' + str(i) for i in range(intDim)]
+        # Create state variables in gurobi
+        grbModel: Model = Model()
+        grbStateVars = []
+        for i in range(intDim):
+            grbStateVars.append(grbModel.addVar(lb=-float('inf'), vtype=GRB.CONTINUOUS, name=listStateVars[i]))
+
+        for i in range(intDim):
+            grbModel.addConstr(grbStateVars[i] >= np.float64(self.__arrayLow__[i]))
+            grbModel.addConstr(grbStateVars[i] >= np.float64(self.__arrayHigh__[i]))
+
+        grbModel.update()
+        # Create dictionary for solver
+        dictVars: Dict[int, Dict[int, Var]] = dict()
+        dictVars[1] = dict()
+        for i in range(1, intDim + 1, 1):
+            dictVars[1][i] = grbStateVars[i - 1]
+
+        return grbModel, dictVars
 
     ############################################
     ###### Unused Methods from other sets  #####
@@ -308,6 +352,24 @@ class Box(Set, ABC):
         # The following line are for just returning (not for implementation)
         arrayStateHigh: npt.ArrayLike = np.array([], dtype=object)
         return arrayStateHigh
+
+    def getNumOfPredVars(self) -> int:
+        """
+        Return the number of predicate variables
+        :return: (intPredVars -> int)
+        """
+        # The following line are for just returning (not for implementation)
+        numOfPredicateVars: int = 0
+        return numOfPredicateVars
+
+    def getNumOfPredicates(self) -> int:
+        """
+        Return the number of predicates
+        :return: (intPredicates -> int)
+        """
+        # The following line are for just returning (not for implementation)
+        numOfPredicates: int = 0
+        return numOfPredicates
 
     def intersectPHSByIndex(self, intIndex: int) -> Set:
         """

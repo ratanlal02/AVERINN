@@ -21,7 +21,7 @@ class Solver(metaclass=ABCMeta):
         """
         pass
 
-    def getInstance(self, varMap: Dict[Var, Var]) -> Dict[int, Dict[int, float]]:
+    def getInstance(self) -> Dict[int, Dict[int, float]]:
         """
         Extract a satisfiable instance of the model
         :return: (dictOutput -> Dict[int, Dict[int, float]])
@@ -30,7 +30,7 @@ class Solver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def outputRange(self, varMap: Dict[Var, Var]) -> Set:
+    def outputRange(self) -> Set:
         """
         Compute range of a set of constraints
         :return: (objSet -> Set)

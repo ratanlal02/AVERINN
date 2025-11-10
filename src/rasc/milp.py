@@ -3,8 +3,6 @@ Author: Ratan Lal
 Date : November 18, 2024
 """
 from abc import ABC
-
-from src.gnn.gnnuts import GNNUTS
 from src.gnn.number import Number
 import numpy as np
 import numpy.typing as npt
@@ -12,9 +10,9 @@ from src.gnn.connection import Connection
 from src.gnn.ireal import IReal
 from src.gnn.layer import Layer
 from src.gnn.gnn import GNN
+from src.gnn.gnnuts import GNNUTS
 from src.rasc.technique import Technique
 from src.set.box import Box
-from src.set.grbset import GRBSet
 from src.set.set import Set
 from src.set.setuts import SetUTS
 from src.solver.gurobi import Gurobi
@@ -81,26 +79,22 @@ class Milp(Technique, ABC):
                 dictX, dictQ, grbModel = self.__createVForALayer__(grbModel, i + 1)
                 dictVarsX[i + 1] = dictX
                 dictVarsQ[i + 1] = dictQ
-            # Map original variables to copied model variables using their names
-            varMap = {v: grbModel.getVarByName(v.varName) for v in grbModel.getVars()}
+
             # Encode Initial Set
-            grbModel = self.__createICForSet__(objSet, dictVarsX[1], grbModel, varMap)
+            grbModel = self.__createICForSet__(objSet, dictVarsX[1], grbModel)
             listSign: List[Sign] = objSet.getSign()
             # Encode the first layer
             grbModel = self.__createCForFirstLayer__(dictM[2], dictVarsX[1], dictVarsX[2],
                                                      dictVarsQ[2], grbModel, 1,
-                                                     listSign, varMap)
+                                                     listSign)
             # Encode from the second layer
             grbModel, dictVarsX, dictVarsQ = self.__encodeFromSecondLayer__(dictM, dictVarsX,
                                                                             dictVarsQ, grbModel)
-            # Update mapping original variables to copied model variables using their names
-            varMap = {v: grbModel.getVarByName(v.varName) for v in grbModel.getVars()}
-            objTempSet: Set = GRBSet(grbModel, dictVarsX)
-            Log.message(objTempSet.display())
+
             # Solve gurobi constraints
             if self.__solverType__ == SolverType.Gurobi:
                 objSolver: Solver = Gurobi(grbModel, dictVarsX)
-                listReachSets.append(objSolver.outputRange(varMap))
+                listReachSets.append(objSolver.outputRange())
 
         return listReachSets
 
@@ -123,22 +117,20 @@ class Milp(Technique, ABC):
         dictVarsX: Dict[int, Dict[int, Var]] = dict()
         dictVarsQ: Dict[int, Dict[int, Var]] = dict()
         # List of status
-        lstStatus: List[bool] = []
+        status: List[bool] = []
         for objSet in listSets:
             grbModel: Model = Model()
             for i in range(2):
                 dictX, dictQ, grbModel = self.__createVForALayer__(grbModel, i + 1)
                 dictVarsX[i + 1] = dictX
                 dictVarsQ[i + 1] = dictQ
-            # Map original variables to copied model variables using their names
-            varMap = {v: grbModel.getVarByName(v.varName) for v in grbModel.getVars()}
             # Encode Initial Set
-            grbModel = self.__createICForSet__(objSet, dictVarsX[1], grbModel, varMap)
+            grbModel = self.__createICForSet__(objSet, dictVarsX[1], grbModel)
             listSign: List[Sign] = objSet.getSign()
             # Encode the first layer
             grbModel = self.__createCForFirstLayer__(dictM[2], dictVarsX[1], dictVarsX[2],
                                                      dictVarsQ[2], grbModel, 1,
-                                                     listSign, varMap)
+                                                     listSign)
             # Encode from the second layer
             grbModel, dictVarsX, dictVarsQ = self.__encodeFromSecondLayer__(dictM, dictVarsX,
                                                                             dictVarsQ, grbModel)
@@ -146,7 +138,6 @@ class Milp(Technique, ABC):
             # Dictionary of output variables
             dictOutputVars: Dict[int, Var] = dictVarsX[len(dictVarsX)]
             # Encode unsafe set
-            status: List[bool] = []
             listA: npt.ArrayLike = self.__outputConstr__[0]
             listb = npt.ArrayLike = self.__outputConstr__[1]
             numOfAandb: int = len(listA)
@@ -155,18 +146,15 @@ class Milp(Technique, ABC):
                 b: npt.ArrayLike = listb[i]
                 grbModelCC: Model = grbModel.copy()
                 # Map original variables to copied model variables using their names
-                varMapP = {v: grbModelCC.getVarByName(v.varName) for v in grbModel.getVars()}
+                varMap = {v: grbModelCC.getVarByName(v.varName) for v in grbModel.getVars()}
                 numOfRows: int = A.shape[0]
                 numOfCols: int = A.shape[1]
                 for j in range(numOfRows):
                     grbModelCC.addConstr(quicksum(np.float64(A[j][k]) *
-                                                  varMapP[dictOutputVars[j + 1]]
+                                                  varMap[dictOutputVars[j + 1]]
                                                   for k in range(numOfCols)) <= np.float64(b[j]))
                 grbModelCC.update()
-                # To see all the constraints added in grbModelCC
-                Log.message("       Constraints for a set and a specification\n")
-                objSet: Set = GRBSet(grbModelCC, dictVarsX)
-                Log.message(objSet.display())
+
                 if self.__solverType__ == SolverType.Gurobi:
                     objSolver: Solver = Gurobi(grbModelCC, dictVarsX)
                     Log.message("Solving\n")
@@ -175,66 +163,6 @@ class Milp(Technique, ABC):
                 if np.any(status):
                     return False
         return True
-
-    def checkSatisfy(self, objTargetSet: Set) -> bool:
-        """
-        Return safety of GNN instance against unsafe set
-        :param objTargetSet: a Set instance
-        :type objTargetSet: Set
-        :return: (status -> bool)
-        True if no valuation of GNN satisfies unsafe set
-        otherwise false
-        """
-        # Compute dictM
-        objAGNN: GNN = GNNUTS.ToAGNN(self.__objGNN__)
-        arrayInput: npt.ArrayLike = self.__objSet__.toAbsolute()
-        dictM: Dict[int, Dict[int, DataType.RealType]] = GNNUTS.getM(objAGNN, arrayInput, self.__lastRelu__)
-        # Satisfiability Checking
-        listSets: List[Set] = self.__objSet__.getSameSignPartition()
-        # Initiate dictionaries for variables
-        dictVarsX: Dict[int, Dict[int, Var]] = dict()
-        dictVarsQ: Dict[int, Dict[int, Var]] = dict()
-        # List of status
-        lstStatus: List[bool] = []
-        for objSet in listSets:
-            grbModel: Model = Model()
-            for i in range(2):
-                dictX, dictQ, grbModel = self.__createVForALayer__(grbModel, i + 1)
-                dictVarsX[i + 1] = dictX
-                dictVarsQ[i + 1] = dictQ
-            # Map original variables to copied model variables using their names
-            varMap = {v: grbModel.getVarByName(v.varName) for v in grbModel.getVars()}
-            # Encode Initial Set
-            grbModel = self.__createICForSet__(objSet, dictVarsX[1], grbModel, varMap)
-            listSign: List[Sign] = objSet.getSign()
-            # Encode the first layer
-            grbModel = self.__createCForFirstLayer__(dictM[2], dictVarsX[1], dictVarsX[2],
-                                                     dictVarsQ[2], grbModel, 1,
-                                                     listSign, varMap)
-            # Encode from the second layer
-            grbModel, dictVarsX, dictVarsQ = self.__encodeFromSecondLayer__(dictM, dictVarsX,
-                                                                            dictVarsQ, grbModel)
-            # Map original variables to copied model variables using their names
-            varMap = {v: grbModel.getVarByName(v.varName) for v in grbModel.getVars()}
-            # Encode target set
-            # Dictionary of output variables
-            dictOutputVars: Dict[int, Var] = dictVarsX[len(dictVarsX)]
-            stateVars: List[Var] = [varMap[v] for v in dictOutputVars.values()]
-            grbModel = SetUTS.encodeSet(grbModel, objTargetSet, stateVars)
-            # Update mapping original variables to copied model variables using their names
-            varMap = {v: grbModel.getVarByName(v.varName) for v in grbModel.getVars()}
-            objTempSet: Set = GRBSet(grbModel, dictVarsX)
-            Log.message(objTempSet.display())
-            Log.message("       Constraints for post and a concrete set\n")
-            objSet: Set = GRBSet(grbModel, dictVarsX)
-            Log.message(objSet.display())
-            if self.__solverType__ == SolverType.Gurobi:
-                objSolver: Solver = Gurobi(grbModel, dictVarsX)
-                lstStatus.append(objSolver.satisfy())
-            if np.any(lstStatus):
-                return True
-
-        return False
 
     def __encodeFromSecondLayer__(self, dictM: Dict[int, Dict[int, DataType.RealType]],
                                   dictVarsX: Dict[int, Dict[int, Var]],
@@ -296,8 +224,7 @@ class Milp(Technique, ABC):
         # Return both dictionaries and gurobi model
         return dictX, dictQ, grbModel
 
-    def __createICForSet__(self, objSet: Set, dictInitX: Dict[int, Var], grbModel: Model,
-                           varMap: Dict[Var, Var]) -> Model:
+    def __createICForSet__(self, objSet: Set, dictInitX: Dict[int, Var], grbModel: Model) -> Model:
         """
         Encode initial values for the input layer
         :param objSet: a Set instance
@@ -314,31 +241,9 @@ class Milp(Technique, ABC):
         if isinstance(objSet, Box):
             # Set lower and upper bound for the initial variables
             for NodeId in dictInitX.keys():
-                grbModel.addConstr(varMap[dictInitX[NodeId]] >= np.float64(objSet.getLowerBound()[NodeId - 1]))
-                grbModel.addConstr(varMap[dictInitX[NodeId]] <= np.float64(objSet.getUpperBound()[NodeId - 1]))
+                grbModel.addConstr(dictInitX[NodeId] >= np.float64(objSet.getArrayLow()[NodeId - 1]))
+                grbModel.addConstr(dictInitX[NodeId] <= np.float64(objSet.getArrayHigh()[NodeId - 1]))
             grbModel.update()
-
-        elif isinstance(objSet, GRBSet):
-            objModel, dictVars = objSet.getModelAndDictVars()
-            numVars: int = objModel.NumVars
-            listVars: List[Var] = objModel.getVars()
-            for constr in objModel.getConstrs():
-                listCoeff: List[float] = []
-                constantTerm = np.float64(0.0)
-                for i in range(numVars):
-                    listCoeff.append(objModel.getCoeff(constr, listVars[i]))
-                constantTerm = constr.getAttr("rhs")
-                if constr.Sense == GRB.LESS_EQUAL:
-                    grbModel.addConstr(
-                        quicksum(dictInitX[i + 1] * np.float64(listCoeff[i]) for i in range(numVars)) <= constantTerm)
-                elif constr.Sense == GRB.GREATER_EQUAL:
-                    grbModel.addConstr(
-                        quicksum(dictInitX[i + 1] * np.float64(listCoeff[i]) for i in range(numVars)) >= constantTerm)
-                else:
-                    grbModel.addConstr(
-                        quicksum(dictInitX[i + 1] * np.float64(listCoeff[i]) for i in range(numVars)) == constantTerm)
-        # update the model
-        grbModel.update()
 
         # return updated the model
         return grbModel
@@ -428,8 +333,7 @@ class Milp(Technique, ABC):
                                  dictXSource: Dict[int, Var],
                                  dictXTarget: Dict[int, Var],
                                  dictQTarget: Dict[int, Var], grbModel: Model,
-                                 intLayerNum: int, listSign: List[Sign],
-                                 varMap: Dict[Var, Var]) -> Model:
+                                 intLayerNum: int, listSign: List[Sign]) -> Model:
         """
         :param dictMTarget: dictionary between Node ids and its upper bound
         for the target layer
@@ -461,31 +365,31 @@ class Milp(Technique, ABC):
         # Node instances of the target layer
         for objNodeTarget in dictLayers[intLayerNum + 1].dictNodes.values():
             # constraints for lower limit for the Target Nodes\
-            grbModel.addConstr(quicksum((varMap[dictXSource[objNodeSource.intId]] *
+            grbModel.addConstr(quicksum((dictXSource[objNodeSource.intId] *
                                          objNodeSource.intSize *
                                          np.float64(self.__getWeight__(
                                              dictConnections[intLayerNum].dictEdges[(objNodeSource.intId,
                                                                                      objNodeTarget.intId)].weight,
                                              listSign[objNodeSource.intId - 1]).getLower()))
                                         for objNodeSource in dictLayers[intLayerNum].dictNodes.values()) +
-                               np.float64(objNodeTarget.bias.getLower()) <= varMap[dictXTarget[objNodeTarget.intId]])
+                               np.float64(objNodeTarget.bias.getLower()) <= dictXTarget[objNodeTarget.intId])
 
-            grbModel.addConstr(quicksum((varMap[dictXSource[objNodeSource.intId]] *
+            grbModel.addConstr(quicksum((dictXSource[objNodeSource.intId] *
                                          objNodeSource.intSize * np.float64(self.__getWeight__(
                         dictConnections[intLayerNum].dictEdges[(objNodeSource.intId,
                                                                 objNodeTarget.intId)].weight,
                         listSign[objNodeSource.intId - 1]).getUpper()))
                                         for objNodeSource in dictLayers[intLayerNum].dictNodes.values()) +
                                np.float64(objNodeTarget.bias.getUpper()) + (dictMTarget[objNodeTarget.intId] *
-                                                                            varMap[dictQTarget[objNodeTarget.intId]]) >=
-                               varMap[
-                                   dictXTarget[objNodeTarget.intId]])
+                                                                            dictQTarget[objNodeTarget.intId]) >=
+
+                                   dictXTarget[objNodeTarget.intId])
 
             # constraints ensuring equality
-            grbModel.addConstr(varMap[dictXTarget[objNodeTarget.intId]] >= 0)
+            grbModel.addConstr(dictXTarget[objNodeTarget.intId] >= 0)
             grbModel.addConstr(
-                np.float64(dictMTarget[objNodeTarget.intId]) * (1 - varMap[dictQTarget[objNodeTarget.intId]]) >=
-                varMap[dictXTarget[objNodeTarget.intId]])
+                np.float64(dictMTarget[objNodeTarget.intId]) * (1 - dictQTarget[objNodeTarget.intId]) >=
+                dictXTarget[objNodeTarget.intId])
 
         # Update the gurobi Model
         grbModel.update()
@@ -508,31 +412,3 @@ class Milp(Technique, ABC):
         elif sign == Sign.NEG:
             weight = IReal(objNumber.getUpper(), objNumber.getLower())
         return weight
-
-    '''
-    def __layerWiseEncoding__(self, intLayerNum: int, dictMForALayer: Dict[int, float]) \
-            -> Tuple[Model, Dict[int, Dict[int, Var]]]:
-        """
-        Encode between two layers
-        :return: (grbModel, dictVarsX)
-        """
-        grbModel: Model = Model()
-        dictXSource, dictQSource, grbModel = self.__createVForALayer__(grbModel, intLayerNum)
-        dictXTarget, dictQTarget, grbModel = self.__createVForALayer__(grbModel, intLayerNum + 1)
-        # store variables
-        dictVarsX: Dict[int, Dict[int, Var]] = dict()
-        dictVarsX[1] = dictXSource
-        dictVarsX[2] = dictXTarget
-        # Initial set
-        grbModel = self.__createICForSet__(dictXSource, grbModel)
-        # Constraints
-        if intLayerNum == intNumLayer - 1:
-            grbModel = self.__createCForALayer__(dictMForALayer, dictXSource, dictXTarget,
-                                                 dictQTarget, grbModel, intLayerNum, self.__lastRelu__)
-        else:
-            grbModel = self.__createCForALayer__(dictMForALayer, dictXSource, dictXTarget,
-                                                 dictQTarget, grbModel, intLayerNum, LastRelu.YES)
-        grbModel.update()
-
-        return grbModel, dictVarsX
-        '''
