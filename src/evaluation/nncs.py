@@ -79,17 +79,19 @@ objGNNAbs: GNN = objAbstraction.getAbstraction()
 ####################################
 
 for i in range(K):
-    objStateSet = SetUTS.toIntervalStarSet(objStateSet)
     objTechnique: Technique = None
     if techniqueType == TechniqueType.MILP:
         objTechnique = Milp(objGNNAbs, objStateSet, None, solverType, lastRelu)
+        listSets: List[Set] = objTechnique.reachSet()
+        objInputSet = SetUTS.rangeOfSets(listSets)
+        objStateSet = objStateSet.linearMap(objDtDyn.A).minkowskiSum(objInputSet.linearMap(objDtDyn.B))
     elif techniqueType == TechniqueType.PROPAGATION:
+        objStateSet = SetUTS.toIntervalStarSet(objStateSet)
         objTechnique = SetPropagation(objGNNAbs, objStateSet, None, solverType, lastRelu)
-
-    listSets: List[Set] = objTechnique.reachSet()
-    objInputSet = SetUTS.rangeOfSets(listSets)
-    objInputSet = SetUTS.toIntervalStarSet(objInputSet)
-    objStateSet = objStateSet.linearMap(objDtDyn.A, objDtDyn.A).minkowskiSum(objInputSet.linearMap(objDtDyn.B, objDtDyn.B))
+        listSets: List[Set] = objTechnique.reachSet()
+        objInputSet = SetUTS.rangeOfSets(listSets)
+        objInputSet = SetUTS.toIntervalStarSet(objInputSet)
+        objStateSet = objStateSet.linearMap(objDtDyn.A, objDtDyn.A).minkowskiSum(objInputSet.linearMap(objDtDyn.B, objDtDyn.B))
 
 
 Log.message("Reach Set \n")
