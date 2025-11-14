@@ -65,7 +65,8 @@ class Milp(Technique, ABC):
         objAGNN: GNN = GNNUTS.ToAGNN(self.__objGNN__)
         arrayInput: npt.ArrayLike = self.__objSet__.toAbsolute()
         dictM: Dict[int, Dict[int, DataType.RealType]] = GNNUTS.getM(objAGNN, arrayInput, self.__lastRelu__)
-
+        # Display dictM
+        SetUTS.displayDictOfDictOfValues(dictM)
         # Reach set
         listSets: List[Set] = self.__objSet__.getSameSignPartition()
 

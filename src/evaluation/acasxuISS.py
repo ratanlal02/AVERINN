@@ -48,8 +48,8 @@ f.close()
 ##### Reading ONNX and spec ######
 ##################################
 # read acasxu benchmark files and specification
-listPartition = [5, 10, 15, 20, 25]
-#listPartition = [5]
+#listPartition = [5, 10, 15, 20, 25]
+listPartition = [5]
 itr = 1
 for size in listPartition:
     for j in range(1, 2, 1):

@@ -1,205 +1,24 @@
-Input Set
-[ 0.6  -0.5  -0.5   0.45 -0.5 ]
-[ 0.67985777  0.5         0.5         0.5        -0.45      ]
-Specification
-[[[-1.  0.  0.  0.  0.]]]
-[[-3.99112565]]
-Network Configuration
-{1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5}
-Reach Set 
+Original Network Structure
+       Matrices and Biases
+       1:[1.0, -1.0]            1:[1.0, 0.5]
+       2:[0.5, 2.0]            2:['-', '-']
 For Layer 1
 For neurons 1
 Number of sets 2
 For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
+Number of sets 2
 Number of Stars: 1
 For Layer 2
+Number of Stars: 1
+For Layer 1
 For neurons 1
 Number of sets 2
 For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
-Number of Stars: 1
-For Layer 3
-For neurons 1
 Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
 Number of Stars: 1
-For Layer 4
-For neurons 1
-Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
+For Layer 2
 Number of Stars: 1
-For Layer 5
-For neurons 1
-Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
-Number of Stars: 1
-For Layer 6
-For neurons 1
-Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
-Number of Stars: 1
-For Layer 7
-Number of Stars: 1
-[-1941968.26815235, -2060753.34587511, -1673483.50474394, -2088217.85182336, -1497580.09016178]
-[4252004.94859891, 4769712.01894774, 4601455.85119783, 3481702.60466392, 2951762.82248528]
+Reach Set 
+[ 2.25 -1.75]
+[ 8.5 13. ]
 Reach set ends
-Total Time: 13.679765939712524
-Input Set
-[ 0.6  -0.5  -0.5   0.45 -0.5 ]
-[ 0.67985777  0.5         0.5         0.5        -0.45      ]
-Specification
-[[[-1.  0.  0.  0.  0.]]]
-[[-3.99112565]]
-Network Configuration
-{1: 5, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 8: 5}
-Reach Set 
-For Layer 1
-For neurons 1
-Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
-For neurons 6
-Number of sets 64
-For neurons 7
-Number of sets 128
-For neurons 8
-Number of sets 256
-For neurons 9
-Number of sets 512
-For neurons 10
-Number of sets 1024
-Number of Stars: 1
-For Layer 2
-For neurons 1
-Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
-For neurons 6
-Number of sets 64
-For neurons 7
-Number of sets 128
-For neurons 8
-Number of sets 256
-For neurons 9
-Number of sets 512
-For neurons 10
-Number of sets 1024
-Number of Stars: 1
-For Layer 3
-For neurons 1
-Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
-For neurons 6
-Number of sets 64
-For neurons 7
-Number of sets 128
-For neurons 8
-Number of sets 256
-For neurons 9
-Number of sets 512
-For neurons 10
-Number of sets 1024
-Number of Stars: 1
-For Layer 4
-For neurons 1
-Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
-For neurons 6
-Number of sets 64
-For neurons 7
-Number of sets 128
-For neurons 8
-Number of sets 256
-For neurons 9
-Number of sets 512
-For neurons 10
-Number of sets 1024
-Number of Stars: 1
-For Layer 5
-For neurons 1
-Number of sets 2
-For neurons 2
-Number of sets 4
-For neurons 3
-Number of sets 8
-For neurons 4
-Number of sets 16
-For neurons 5
-Number of sets 32
-For neurons 6
-Number of sets 64
-For neurons 7
-Number of sets 128
-For neurons 8
-Number of sets 256
-For neurons 9
-Number of sets 512
-For neurons 10
-Number of sets 1024

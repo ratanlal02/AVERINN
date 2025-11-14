@@ -54,8 +54,8 @@ class SetPropagation(Technique, ABC):
             Log.message("For Layer "+ str(i)+"\n")
             listTempSet = []
             # Find lower and upper weight matrices
-            matLow: npt.ArrayLike = self.__objGNN__.getLowerMatrixByLayer(i)
-            matHigh: npt.ArrayLike = self.__objGNN__.getUpperMatrixByLayer(i)
+            matLow: npt.ArrayLike = self.__objGNN__.getLowerMatrixByLayerWithSize(i)
+            matHigh: npt.ArrayLike = self.__objGNN__.getUpperMatrixByLayerWithSize(i)
             for S in listSet:
                 # Compute Reach set for the next layer
                 objSet = S.linearMap(matLow, matHigh)

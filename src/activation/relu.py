@@ -4,6 +4,9 @@ Date : January 28, 2025
 """
 from typing import List
 
+import numpy as np
+import numpy.typing as npt
+
 from src.set.intervalstarset import IntervalStarSet
 from src.set.set import Set
 from src.types.datatype import DataType
@@ -49,7 +52,11 @@ class Relu:
                     tempListSets.append(objSetIPHSi)
                 objSetINHSi: Set = S.intersectNHSByIndex(i)
                 if not(objSetINHSi.isEmpty()):
-                    tempListSets.append(objSetINHSi)
+                    matLow: npt.ArrayLike = np.identity(objSetINHSi.getDimension(), dtype=np.float64)
+                    matHigh: npt.ArrayLike = np.identity(objSetINHSi.getDimension(), dtype=np.float64)
+                    matLow[i, i] = 0.0
+                    matHigh[i, i] = 0.0
+                    tempListSets.append(objSetINHSi.linearMap(matLow, matHigh))
             listSets = tempListSets
             Log.message("Number of sets " + str(len(listSets))+"\n")
 

@@ -199,6 +199,55 @@ class GNN:
         # Return upper weight matrix from layer intLayer + 1 to intLayer
         return matWeight
 
+    def getLowerMatrixByLayerWithSize(self, intLayer: int) -> npt.ArrayLike:
+        """
+        Find lower weight matrix from layer intLayer+1 to layer intLayer
+        :param intLayer: layer number
+        :type intLayer: int
+        :return: (matWeight: npt.ArrayLike)
+        Weight Matrix from layer intLayer+1 to layer intLayer
+        """
+        # Number of neurons at layer intLayer + 1 (source layer)
+        numOfSN: int = self.__dictLayers__[intLayer + 1].intNumNodes
+        # Number of neurons at layer intLayer (target layer)
+        numOfTN: int = self.__dictLayers__[intLayer].intNumNodes
+        # Initialization of a matrix to store lower weight of edges
+        # from source layer to target layer
+        matWeight: npt.ArrayLike = np.array([[DataType.RealType(0.0) for j in range(numOfTN)]
+                                             for i in range(numOfSN)], dtype=object)
+        # Extract weight from dictIConnections
+        for i in range(numOfSN):
+            for j in range(numOfTN):
+                matWeight[i][j] = self.__dictConnections__[intLayer].dictEdges[
+                    (j + 1, i + 1)].weight.getLower()*self.getDictLayers()[intLayer].dictNodes[j+1].intSize
+        # Return lower weight matrix from layer intLayer + 1 to intLayer
+        return matWeight
+
+    def getUpperMatrixByLayerWithSize(self, intLayer: int) -> npt.ArrayLike:
+        """
+        Find upper weight matrix from layer intLayer+1 to layer intLayer
+        :param intLayer: layer number
+        :type intLayer: int
+        :return: (matWeight: npt.ArrayLike)
+        Weight Matrix from layer intLayer+1 to layer intLayer
+        """
+        # Number of neurons at layer intLayer + 1 (source layer)
+        numOfSN: int = self.__dictLayers__[intLayer + 1].intNumNodes
+        # Number of neurons at layer intLayer (target layer)
+        numOfTN: int = self.__dictLayers__[intLayer].intNumNodes
+        # Initialization of a matrix to store lower weight of edges
+        # from source layer to target layer
+        matWeight: npt.ArrayLike = np.array([[DataType.RealType(0.0) for j in range(numOfTN)]
+                                             for i in range(numOfSN)], dtype=object)
+        # Extract weight from dictConnections
+        for i in range(numOfSN):
+            for j in range(numOfTN):
+                matWeight[i][j] = self.__dictConnections__[intLayer].dictEdges[
+                    (j + 1, i + 1)].weight.getUpper()*self.getDictLayers()[intLayer].dictNodes[j+1].intSize
+
+        # Return upper weight matrix from layer intLayer + 1 to intLayer
+        return matWeight
+
     def getLowerBiasByLayer(self, intLayer: int) -> npt.ArrayLike:
         """
         Find lower Bias array for the layer number intLayer

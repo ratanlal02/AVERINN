@@ -11,4 +11,6 @@ class TechniqueType(enum.Enum):
     """
     # Type 1
     MILP = 1
+    #Type 2
+    PROPAGATION = 2
 
