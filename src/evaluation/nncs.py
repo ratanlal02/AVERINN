@@ -28,11 +28,11 @@ from src.utilities.vnnlib import VNNLib
 ########## Parameters  ###########
 ##################################
 solverType: SolverType = SolverType.Gurobi
-techniqueType: TechniqueType = TechniqueType.PROPAGATION
+techniqueType: TechniqueType = TechniqueType.MILP
 lastRelu: LastRelu = LastRelu.NO
 partitionType: PartitionType = PartitionType.FIXED
 absType: AbsType = AbsType.INTERVAL
-K: int = 2
+K: int = 1
 
 ##################################
 ###### Discrete Dynamics  ########
