@@ -50,15 +50,19 @@ class SetPropagation(Technique, ABC):
         # Get number of layer
         numOfLayer: int = self.__objGNN__.getNumOfLayers()
         listSet: List[Set] = [self.__objSet__]
+        Log.message("       After Layer         Number of Interval Stars\n")
         for i in range(1, numOfLayer, 1):
-            Log.message("For Layer "+ str(i)+"\n")
+            Log.message("           "+ str(i+1))
             listTempSet = []
             # Find lower and upper weight matrices
             matLow: npt.ArrayLike = self.__objGNN__.getLowerMatrixByLayerWithSize(i)
             matHigh: npt.ArrayLike = self.__objGNN__.getUpperMatrixByLayerWithSize(i)
+            arrayLow: npt.ArrayLike = self.__objGNN__.getLowerBiasByLayer(i+1)
+            arrayHigh: npt.ArrayLike = self.__objGNN__.getUpperBiasByLayer(i+1)
+
             for S in listSet:
                 # Compute Reach set for the next layer
-                objSet = S.linearMap(matLow, matHigh)
+                objSet = S.affineMap(matLow, arrayLow, matHigh, arrayHigh)
                 if i == numOfLayer - 1:
                     if self.__lastRelu__ == LastRelu.YES:
                         listTempSet.extend(Relu.anySet(objSet))
@@ -68,9 +72,9 @@ class SetPropagation(Technique, ABC):
                     listTempSet.extend(Relu.anySet(objSet))
 
             listSet = listTempSet
-            objSet: Set = SetUTS.rangeOfSets(listSet)
-            listSet = [SetUTS.toIntervalStarSet(objSet)]
-            Log.message("Number of Stars: "+str(len(listSet))+"\n")
+            #objSet: Set = SetUTS.rangeOfSets(listSet)
+            #listSet = [SetUTS.toIntervalStarSet(objSet)]
+            Log.message("                       "+str(len(listSet))+"\n")
 
         return listSet
 

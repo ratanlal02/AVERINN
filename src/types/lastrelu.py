@@ -15,3 +15,6 @@ class LastRelu(enum.Enum):
 
     # for NO
     NO = 0
+
+    # Otherwise
+    UNKNOWN = -1

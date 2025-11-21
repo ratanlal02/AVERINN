@@ -1,18 +1,20 @@
 """
 Author: Ratan Lal
-Date : November 18, 2024
+Date : November 4, 2023
 """
 import enum
 
 
-class TechniqueType(enum.Enum):
+class ProbType(enum.Enum):
     """
      It captures different types of abstraction
     """
-    # Type 1
-    MILP = 1
-    #Type 2
-    PROPAGATION = 2
+    # Reachability
+    REACH = 1
+
+    # SAFETY
+    SAFETY = 2
+
     # Otherwise
     UNKNOWN = -1
 

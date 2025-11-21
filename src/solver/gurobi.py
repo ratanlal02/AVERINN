@@ -62,6 +62,7 @@ class Gurobi(Solver, ABC):
             #self.__model__.write("./model.ilp")
             return False
         else:
+            self.__model__.write('./model.lp')
             return True
 
     def getInstance(self) -> Dict[int, Dict[int, DataType.RealType]]:

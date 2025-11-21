@@ -6,7 +6,7 @@ Date : 20 September, 2020
 class DtDyn:
 	"""
 	Class representing discrete time linear dynamics
-		X(k+1) = AX(k) + Bu(k)
+		X(k+1) = AX(k) + Bu(k) + C
 	Attributes:
 		intDim (int): dimension of the system
 		intIpDim (int): dimension of inputs

@@ -117,17 +117,6 @@ class IntervalStarSet(Set, ABC):
         """
         return self.__arrayStateHigh__
 
-    def getLowerBound(self) -> npt.ArrayLike:
-        """
-        Return the lower bound the IntervalStarSet
-        """
-
-
-    def getUpperBound(self) -> npt.ArrayLike:
-        """
-        Return the upper bound the IntervalStarSet
-        """
-
     ############################################
     ########## Methods for only ISS    #########
     ############################################

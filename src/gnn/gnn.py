@@ -130,6 +130,11 @@ class GNN:
         # Find the maximum number of rows across all matrices
         max_rows = max(len(matrix) for matrix in matrices)
 
+        # Add layer information
+        layerMsg = "        "
+        for i in range(1, self.__intNumLayers__, 1):
+            layerMsg += "L"+str(i+1)+" to L"+str(i)+"                              "
+        Log.message(layerMsg+"\n")
         # Prepare the matrices by adding rows of placeholder values where necessary
         # Fill missing rows in each matrix with placeholders (empty lists or None)
         padded_matrices = []
@@ -147,7 +152,8 @@ class GNN:
             row_elements = []
             for i, matrix in enumerate(padded_matrices):
                 row_elements.append("       "+str(row_index + 1) + ":" + str(matrix[row_index]))
-                #row_elements.append("   "+str(padded_biases[i][row_index]))
+                # For large network, it creates problem
+                row_elements.append("   "+str(padded_biases[i][row_index]))
             Log.message(str('     '.join(row_elements))+"\n")
 
     def getLowerMatrixByLayer(self, intLayer: int) -> npt.ArrayLike:

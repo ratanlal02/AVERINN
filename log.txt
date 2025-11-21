@@ -1,11 +1,67 @@
-Original Network Structure
+Neural Network
        Matrices and Biases
-       1:[1.0, -1.0]            1:[1.0, 0.5]
-       2:[0.5, 2.0]            2:['-', '-']
+        L2 to L1                              L3 to L2                              
+       1:[1.0, -1.0]        -1.0            1:[1.0, 0.5]        1.0
+       2:[0.5, 2.0]        1.0            2:['-', '-']        -
+Specification
+       Input Set
+       Lower: [1. 1.]
+       Upper: [2. 2.]
+       Unsafe Property (A1X<=b1 or A2X<=b1 or ...)
+        Property 1
+        [-1.  0.]      -10.0
+        [ 0. -1.]      -1.0
+Interation0
+Upper Bound for each neuron
          1 : {1: 2.0, 2: 2.0}
          2 : {1: 5.0, 2: 6.0}
          3 : {1: 9.0}
+MILP Encoding for the first if the set is splitted
+Only initial set encoding will be changed for other sets
+          x_1_1*1.0 >= 1.0
+          x_1_1*1.0 <= 2.0
+          x_1_2*1.0 >= 1.0
+          x_1_2*1.0 <= 2.0
+          x_1_1*1.0 + x_1_2*-1.0 + x_2_1*-1.0 <= 1.0
+          x_1_1*1.0 + x_1_2*-1.0 + x_2_1*-1.0 + q_2_1*5.0 >= 1.0
+          x_2_1*1.0 >= 0.0
+          x_2_1*-1.0 + q_2_1*-5.0 >= -5.0
+          x_1_1*0.5 + x_1_2*2.0 + x_2_2*-1.0 <= -1.0
+          x_1_1*0.5 + x_1_2*2.0 + x_2_2*-1.0 + q_2_2*6.0 >= -1.0
+          x_2_2*1.0 >= 0.0
+          x_2_2*-1.0 + q_2_2*-6.0 >= -6.0
+          x_2_1*1.0 + x_2_2*0.5 + x_3_1*-1.0 <= -1.0
+          x_2_1*1.0 + x_2_2*0.5 + x_3_1*-1.0 >= -1.0
+Interation1
+Upper Bound for each neuron
+         1 : {1: 4.0, 2: 4.0}
+         2 : {1: 9.0, 2: 11.0}
+         3 : {1: 15.5}
+MILP Encoding for the first if the set is splitted
+Only initial set encoding will be changed for other sets
+          x_1_1*1.0 >= 2.0
+          x_1_1*1.0 <= 4.0
+          x_1_2*1.0 >= 2.75
+          x_1_2*1.0 <= 4.0
+          x_1_1*1.0 + x_1_2*-1.0 + x_2_1*-1.0 <= 1.0
+          x_1_1*1.0 + x_1_2*-1.0 + x_2_1*-1.0 + q_2_1*9.0 >= 1.0
+          x_2_1*1.0 >= 0.0
+          x_2_1*-1.0 + q_2_1*-9.0 >= -9.0
+          x_1_1*0.5 + x_1_2*2.0 + x_2_2*-1.0 <= -1.0
+          x_1_1*0.5 + x_1_2*2.0 + x_2_2*-1.0 + q_2_2*11.0 >= -1.0
+          x_2_2*1.0 >= 0.0
+          x_2_2*-1.0 + q_2_2*-11.0 >= -11.0
+          x_2_1*1.0 + x_2_2*0.5 + x_3_1*-1.0 <= -1.0
+          x_2_1*1.0 + x_2_2*0.5 + x_3_1*-1.0 >= -1.0
 Reach Set 
-[2.   2.75]
-[4. 4.]
-Reach set ends
+       Lower: [4.75 4.  ]
+       Upper: [8.  6.5]
+Safety Checking 
+       MILP Encoding
+          x_0*1.0 >= 4.75
+          x_0*1.0 <= 8.0
+          x_1*1.0 >= 4.0
+          x_1*1.0 <= 6.5
+          x_0*-1.0 <= -10.0
+          x_1*-1.0 <= -1.0
+Safety Status: Safe 

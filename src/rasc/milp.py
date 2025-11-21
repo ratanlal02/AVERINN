@@ -66,6 +66,7 @@ class Milp(Technique, ABC):
         arrayInput: npt.ArrayLike = self.__objSet__.toAbsolute()
         dictM: Dict[int, Dict[int, DataType.RealType]] = GNNUTS.getM(objAGNN, arrayInput, self.__lastRelu__)
         # Display dictM
+        Log.message("Upper Bound for each neuron\n")
         SetUTS.displayDictOfDictOfValues(dictM)
         # Reach set
         listSets: List[Set] = self.__objSet__.getSameSignPartition()
@@ -73,7 +74,8 @@ class Milp(Technique, ABC):
         # Initiate dictionaries for variables
         dictVarsX: Dict[int, Dict[int, Var]] = dict()
         dictVarsQ: Dict[int, Dict[int, Var]] = dict()
-
+        # Model is printed only for the first set
+        isFirst: bool = True
         for objSet in listSets:
             grbModel: Model = Model()
             for i in range(2):
@@ -95,6 +97,11 @@ class Milp(Technique, ABC):
             # Solve gurobi constraints
             if self.__solverType__ == SolverType.Gurobi:
                 objSolver: Solver = Gurobi(grbModel, dictVarsX)
+                if isFirst:
+                    Log.message("MILP Encoding for the first if the set is splitted\n")
+                    Log.message("Only initial set encoding will be changed for other sets\n")
+                    Log.message(SetUTS.displayModel(grbModel))
+                    isFirst = False
                 listReachSets.append(objSolver.outputRange())
 
         return listReachSets
@@ -110,7 +117,7 @@ class Milp(Technique, ABC):
         objAGNN: GNN = GNNUTS.ToAGNN(self.__objGNN__)
         arrayInput: npt.ArrayLike = self.__objSet__.toAbsolute()
         dictM: Dict[int, Dict[int, float]] = GNNUTS.getM(objAGNN, arrayInput, self.__lastRelu__)
-        Log.message("Bound for absolute Network\n")
+        Log.message("Upper Bound for each neuron\n")
         SetUTS.displayDictOfDictOfValues(dictM)
         # Safety Checking
         listSets: List[Set] = self.__objSet__.getSameSignPartition()
@@ -119,6 +126,8 @@ class Milp(Technique, ABC):
         dictVarsQ: Dict[int, Dict[int, Var]] = dict()
         # List of status
         status: List[bool] = []
+        # Constraint for only first properties
+        isFirst: bool = True
         for objSet in listSets:
             grbModel: Model = Model()
             for i in range(2):
@@ -158,7 +167,10 @@ class Milp(Technique, ABC):
 
                 if self.__solverType__ == SolverType.Gurobi:
                     objSolver: Solver = Gurobi(grbModelCC, dictVarsX)
-                    Log.message("Solving\n")
+                    if isFirst:
+                        Log.message("MILP Encoding\n")
+                        Log.message(SetUTS.displayModel(grbModelCC))
+                        isFirst = False
                     status.append(objSolver.satisfy())
 
                 if np.any(status):

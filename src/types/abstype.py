@@ -12,3 +12,6 @@ class AbsType(enum.Enum):
     # Type 1
     INTERVAL = 1
 
+    # Otherwise
+    UNKNOWN = -1
+

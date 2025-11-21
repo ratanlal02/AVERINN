@@ -274,7 +274,7 @@ class Box(Set, ABC):
 
         for i in range(intDim):
             grbModel.addConstr(grbStateVars[i] >= np.float64(self.__arrayLow__[i]))
-            grbModel.addConstr(grbStateVars[i] >= np.float64(self.__arrayHigh__[i]))
+            grbModel.addConstr(grbStateVars[i] <= np.float64(self.__arrayHigh__[i]))
 
         grbModel.update()
         # Create dictionary for solver

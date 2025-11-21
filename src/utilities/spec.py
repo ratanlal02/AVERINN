@@ -49,3 +49,18 @@ class Spec:
         listB = np.array(listB)
 
         return listA, listB
+
+    def display(outputConstr: npt.ArrayLike)->str:
+        """
+        Return formatted output string
+        """
+        numOfProperties: int = len(outputConstr[0])
+        propertyMsg = ""
+        for i in range(numOfProperties):
+            propertyMsg += "        Property "+str(i+1)+"\n"
+            A = outputConstr[0][i]
+            b = outputConstr[1][i]
+            for j in range(A.shape[0]):
+                propertyMsg += "        "+str(A[j]) + "      "+ str(b[j]) + "\n"
+
+        return propertyMsg

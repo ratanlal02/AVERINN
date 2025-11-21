@@ -15,3 +15,6 @@ class SolverType(enum.Enum):
     # Type 2
     SMT = 2
 
+    # Otherwise
+    UNKNOWN = -1
+

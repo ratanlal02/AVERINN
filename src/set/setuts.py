@@ -129,3 +129,76 @@ class SetUTS:
 
         objSet: Set = IntervalStarSet(objIMBasisV, matConstraintC, arrayConstraintd)
         return objSet
+
+    @staticmethod
+    def displayModel(grbModel: Model) -> str:
+        """
+        Return constraints related to the model
+        """
+        strGRBSet: str = ""
+        listVars: List[Var] = grbModel.getVars()
+        numVars: int = len(listVars)
+        for constr in grbModel.getConstrs():
+            listCoeff: List[float] = []
+            for i in range(numVars):
+                listCoeff.append(grbModel.getCoeff(constr, listVars[i]))
+            constantTerm = constr.getAttr("rhs")
+            isFirst: bool = True
+            for i in range(numVars):
+                if (listCoeff[i] != 0.0):
+                    if isFirst:
+                        strGRBSet += "          " + str(listVars[i].VarName) + "*" + str(listCoeff[i])
+                        isFirst = False
+                    else:
+                        strGRBSet += " + " + str(listVars[i].VarName) + "*" + str(listCoeff[i])
+
+            if constr.Sense == GRB.LESS_EQUAL:
+                strGRBSet += " <= " + str(constantTerm)
+            elif constr.Sense == GRB.GREATER_EQUAL:
+                strGRBSet += " >= " + str(constantTerm)
+            else:
+                strGRBSet += " == " + str(constantTerm)
+            strGRBSet += "\n"
+
+        return strGRBSet
+
+    @staticmethod
+    def intersectWithUnsafe(objSet: Set, outputConstr: npt.ArrayLike, solverType: SolverType) -> bool:
+        """
+        "param objSet: an instance of Set
+        :type objSet: Set
+        :param outputConstr: tuple in the form ([A1, A2,...], [b1,b2,...])
+        :return: bool (True if intersect or False otherwise)
+        """
+        # Encode the set
+        grbModel, dictVars = objSet.getModelVars()
+
+        # Encode unsafe set
+        listA: npt.ArrayLike = outputConstr[0]
+        listb = npt.ArrayLike = outputConstr[1]
+        numOfAandb: int = len(listA)
+        status: List[bool] = []
+        for i in range(numOfAandb):
+            A: npt.ArrayLike = listA[i]
+            b: npt.ArrayLike = listb[i]
+            grbModelCC: Model = grbModel.copy()
+            # Map original variables to copied model variables using their names
+            varMap = {v: grbModelCC.getVarByName(v.varName) for v in grbModel.getVars()}
+            numOfRows: int = A.shape[0]
+            numOfCols: int = A.shape[1]
+            for j in range(numOfRows):
+                grbModelCC.addConstr(quicksum(np.float64(A[j][k]) *
+                                              varMap[dictVars[1][j + 1]]
+                                              for k in range(numOfCols)) <= np.float64(b[j]))
+            grbModelCC.update()
+
+            if solverType == SolverType.Gurobi:
+                objSolver: Solver = Gurobi(grbModelCC, dictVars)
+                Log.message("       MILP Encoding\n")
+                Log.message(SetUTS.displayModel(grbModelCC))
+                status.append(objSolver.satisfy())
+
+            if np.any(status):
+                return True
+
+        return False
