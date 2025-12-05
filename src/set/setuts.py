@@ -13,6 +13,7 @@ from src.set.set import Set
 import numpy.typing as npt
 import numpy as np
 
+from src.set.starset import StarSet
 from src.solver.gurobi import Gurobi
 from src.solver.solver import Solver
 from src.types.datatype import DataType
@@ -128,6 +129,40 @@ class SetUTS:
         arrayConstraintd = np.array([1 for j in range(2 * intDim)])
 
         objSet: Set = IntervalStarSet(objIMBasisV, matConstraintC, arrayConstraintd)
+        return objSet
+
+    @staticmethod
+    def toStarSet(objSet: Set) -> Set:
+        """
+        Convert a given get into IntervalStarSet as a Set
+        """
+        rangeSet = objSet.getRange()
+        arrayLow = rangeSet[0]
+        arrayHigh = rangeSet[1]
+        intDim = objSet.getDimension()
+        # define matBasisV, that is, center point and vertices
+        matBasisV = []
+        for i in range(intDim):
+            temp = [0.0 for j in range(intDim + 1)]
+            temp[0] = (arrayLow[i] + arrayHigh[i]) / 2
+            temp[i + 1] = (arrayHigh[i] - arrayLow[i]) / 2
+            matBasisV.append(temp)
+        matBasisV = np.array(matBasisV, dtype=np.float64)
+
+        # define constraint matrix for -1 <=a[1]<=1, ....
+        matConstraintC = []
+        for i in range(intDim):
+            temp = [0.0 for j in range(intDim)]
+            temp[i] = 1
+            matConstraintC.append(temp)
+            temp = [0 for j in range(intDim)]
+            temp[i] = -1
+            matConstraintC.append(temp)
+        matConstraintC = np.array(matConstraintC)
+
+        arrayConstraintd = np.array([1 for j in range(2 * intDim)])
+
+        objSet: Set = StarSet(matBasisV, matConstraintC, arrayConstraintd)
         return objSet
 
     @staticmethod

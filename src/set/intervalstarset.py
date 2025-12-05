@@ -68,7 +68,7 @@ class IntervalStarSet(Set, ABC):
     ############################################
     ########## Methods for attributes  #########
     ############################################
-    def getMatBasisV(self) -> IntervalMatrix:
+    def getIMatBasisV(self) -> IntervalMatrix:
         """
         Return Basis interval matrix
         :return: (objIMBasisV -> IntervalMatrix )

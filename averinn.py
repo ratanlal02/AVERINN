@@ -197,12 +197,18 @@ for i in range(K):
         elif (objDtDyn.B is not None) and (objDtDyn.C is not None):
             objStateSet = objStateSet.minkowskiSum(objInputSet.affineMap(objDtDyn.B, objDtDyn.C))
     elif techniqueType == TechniqueType.PROPAGATION:
-        objStateSet = SetUTS.toIntervalStarSet(objStateSet)
+        if absRequired == "YES":
+            objStateSet = SetUTS.toIntervalStarSet(objStateSet)
+        else:
+            objStateSet = SetUTS.toStarSet(objStateSet)
         Log.message("Number of Interval Stars after each layer\n")
         objTechnique = SetPropagation(objGNNUse, objStateSet, outputConstr, solverType, lastRelu)
         listSets: List[Set] = objTechnique.reachSet()
         objInputSet = SetUTS.rangeOfSets(listSets)
-        objInputSet = SetUTS.toIntervalStarSet(objInputSet)
+        if absRequired == "YES":
+            objInputSet = SetUTS.toIntervalStarSet(objInputSet)
+        else:
+            objInputSet = SetUTS.toStarSet(objInputSet)
         objStateSet = objStateSet.linearMap(objDtDyn.A, objDtDyn.A)
         if (objDtDyn.B is not None) and (objDtDyn.C is None):
             objStateSet = objStateSet.minkowskiSum(objInputSet.linearMap(objDtDyn.B, objDtDyn.B))

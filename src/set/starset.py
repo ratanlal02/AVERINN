@@ -3,14 +3,17 @@ Author: Ratan Lal
 Date : November 4, 2023
 """
 from abc import ABC
-from typing import Tuple
+from typing import Tuple, Dict, List
 
 import numpy.typing as npt
 import numpy as np
+from gurobipy import Model, Var, GRB, quicksum
 
+from src.set.intervalmatrix import IntervalMatrix
 from src.set.set import Set
 from src.solver.gurobi import Gurobi
 from src.solver.solver import Solver
+from src.types.sign import Sign
 
 
 class StarSet(Set, ABC):
@@ -24,7 +27,7 @@ class StarSet(Set, ABC):
     def __init__(self, matBasisV: npt.ArrayLike, matConstraintC: npt.ArrayLike,
                  arrayConstraintd: npt.ArrayLike, arrayPredicateLow: npt.ArrayLike = None,
                  arrayPredicateHigh: npt.ArrayLike = None, arrayStateLow: npt.ArrayLike = None,
-                arrayStateHigh: npt.ArrayLike = None):
+                 arrayStateHigh: npt.ArrayLike = None):
         """
         Initialize an instance of StarSet
         :param matBasisV: a matrix where first column captures center and rest of them are vertices
@@ -63,11 +66,6 @@ class StarSet(Set, ABC):
         # A one dimensional array for the upper bound on the state variables
         self.__arrayStateHigh__: npt.ArrayLike = arrayStateHigh
 
-        # Number of state variables
-        self.intDim: int = matBasisV.shape[0]
-
-        # Number of predicate variables
-        self.intNumVar: int = matConstraintC.shape[1]
 
     ############################################
     ########## Methods for attributes  #########
@@ -142,7 +140,17 @@ class StarSet(Set, ABC):
     ########## Common Methods  ################
     ############################################
 
-    def linearMap(self, matLow: npt.ArrayLike, matHigh:npt.ArrayLike = None) -> Set:
+    def getDimension(self) -> int:
+        """
+        Returns the dimension of the IntervalStarSet instance
+        :return: (intDim -> int)
+        """
+        # Number of state variables
+        intDim: int = self.__matBasisV__.shape[0]
+
+        return intDim
+
+    def linearMap(self, matLow: npt.ArrayLike, matHigh: npt.ArrayLike = None) -> Set:
         """
         Compute affine map without input of an interval star set
         ::param matLow: lower matrix of an interval matrix for weight
@@ -201,7 +209,7 @@ class StarSet(Set, ABC):
 
         # Compute column vector for the predicate constraint
         arrayConstraintIPHSd: npt.ArrayLike = np.concatenate((self.__arrayConstraintd__,
-                                                             np.array([[self.__matBasisV__[intIndex][0]]])), axis=0)
+                                                              np.array([[self.__matBasisV__[intIndex][0]]])), axis=0)
 
         # Create star set for the intersection
         objIPHSStarSet: Set = StarSet(self.__matBasisV__, matConstraintIPHSC, arrayConstraintIPHSd)
@@ -223,7 +231,7 @@ class StarSet(Set, ABC):
 
         # Compute column vector for the predicate constraint
         arrayConstraintINHSd: npt.ArrayLike = np.concatenate((self.__arrayConstraintd__,
-                                                             np.array([[-self.__matBasisV__[intIndex][0]]])), axis=0)
+                                                              np.array([[-self.__matBasisV__[intIndex][0]]])), axis=0)
 
         # Create star set for the intersection
         objINHSStarSet: Set = StarSet(self.__matBasisV__, matConstraintINHSC, arrayConstraintINHSd)
@@ -253,7 +261,8 @@ class StarSet(Set, ABC):
                                                   [np.zeros((r2, c1)), objStarSet.matConstraintC]])
 
         # Vertical concatenation of column vectors cvecConstraintd of both self and objStarSet
-        arrayConstraintd: npt.ArrayLike = np.concatenate((self.__arrayConstraintd__, objStarSet.getArrayConstraintd()), axis=0)
+        arrayConstraintd: npt.ArrayLike = np.concatenate((self.__arrayConstraintd__, objStarSet.getArrayConstraintd()),
+                                                         axis=0)
 
         # Create an instance of StarSet for the minkowski sum
         objSumStarSet: Set = StarSet(matBasisSumV, matConstraintC, arrayConstraintd)
@@ -272,35 +281,169 @@ class StarSet(Set, ABC):
         rangeISS: Tuple[npt.ArrayLike, npt.ArrayLike] = (objSet.getArrayLow(), objSet.getArrayHigh())
         return rangeISS
 
-
-
-    def intersectHalfSpace(self, matH: npt.ArrayLike, cvecg: npt.ArrayLike) -> 'StarSet':
+    def isEmpty(self) -> bool:
         """
-        Compute intersection between star set and half space expressed by
-        Hx<=g
-        :param matH: matrix for the half space
-        :type matH: npt.ArrayLike
-        :param cvecg: column vector for the half space
-        :type cvecg: npt.ArrayLike
-        :return: (objIHSStarSet -> StarSet) star set for the intersection between self and Hx<=g
+        Checks if the set is empty
+        :return: (status -> bool)
         """
-        # Compute predicate matrix for the intersection StarSet
-        C: npt.ArrayLike = np.matmul(matH, self.matBasisV[:, 1:])
+        # Encode Interval Star Set in Gurobi
+        grbModel, dictVars = self.__encode__()
+        objSolver: Solver = Gurobi(grbModel, dictVars)
+        if objSolver.satisfy():
+            return False
+        else:
+            return True
 
-        # Vertical concatenation
-        matConstraintIHSC: npt.ArrayLike = np.concatenate((self.matConstraintC, C), axis=0)
+    def getModelVars(self) -> Tuple[Model, Dict[int, Dict[int, Var]]]:
+        """"
+        Get encoding of a set and dictionary of variables
+        :return: (ModelVars -> Tuple[Model, Dict[Dict[int, Var]]])
+        """
+        # Encode Interval Star Set in Gurobi
+        grbModel, dictVars = self.__encode__()
 
-        # Compute column vector for the predicate
-        cvecg = cvecg - np.matmul(matH, self.matBasisV[:, 0])
+        # Return Model and DictVars
+        return grbModel, dictVars
 
-        # Compute column vector for the constraint
-        cvecConstraintIHSd: npt.ArrayLike = np.concatenate((self.cvecConstraintd, cvecg), axis=0)
+        ############################################
+        ############## Private Methods #############
+        ############################################
 
-        # Create star set for the intersection with the half space
-        objIHSStarSet: StarSet = StarSet(self.matBasisV, matConstraintIHSC, cvecConstraintIHSd)
+    def __encode__(self) -> Tuple[Model, Dict[int, Dict[int, Var]]]:
+        """"
+        Encode Star Set into Gurobi format
+        :return: (grbModel -> Model)
+        """
+        # Create state variables
+        intDim: int = self.getDimension()
+        listStateVars: List[str] = ['x_' + str(i) for i in range(intDim)]
 
-        # Return star set for the intersection with the half space
-        return objIHSStarSet
+        # Create predicate variables
+        intPredVars: int = self.getNumOfPredVars()
+        listPredVars: List[str] = ['alpha_' + str(j) for j in range(intPredVars)]
 
+        # Create a gurobi model
+        grbModel: Model = Model()
 
+        # Create state variables in gurobi
+        grbStateVars = []
+        for i in range(intDim):
+            grbStateVars.append(grbModel.addVar(lb=-float('inf'), vtype=GRB.CONTINUOUS, name=listStateVars[i]))
 
+        # Create predicate variables in gurobi
+        grbPredVars = []
+        for j in range(intPredVars):
+            grbPredVars.append(grbModel.addVar(lb=-float('inf'), vtype=GRB.CONTINUOUS, name=listPredVars[j]))
+
+        # Create constraints for states x = c + sum (ai vi)
+        for i in range(intDim):
+            grbModel.addConstr(grbStateVars[i] == self.__matBasisV__[i][0] + quicksum(
+                grbPredVars[j] * self.__matBasisV__[i][j + 1] for j in range(intPredVars)))
+
+        # Create constraints for predicates C alpha <= d
+        intPredicates: int = self.getNumOfPredicates()
+        for i in range(intPredicates):
+            grbModel.addConstr(quicksum(self.__matConstraintC__[i][j] * grbPredVars[j]
+                                        for j in range(intPredVars)) <= self.__arrayConstraintd__[i])
+
+        grbModel.update()
+
+        # Create dictionary for solver
+        dictVars: Dict[int, Dict[int, Var]] = dict()
+        dictVars[1] = dict()
+        for i in range(1, intDim + 1, 1):
+            dictVars[1][i] = grbStateVars[i - 1]
+
+        return grbModel, dictVars
+
+    ############################################
+    ### Unused Methods from Box ################
+    ############################################
+    def getArrayLow(self) -> npt.ArrayLike:
+        """
+        Returns the lower end point of the Box instance
+        :return: (arrayLow -> npt.ArrayLike)
+        One dimensional array for the lower end point fo the box
+        """
+        # The following line are for just returning (not for implementation)
+        arrayLow: npt.ArrayLike = np.array([], dtype=object)
+        return arrayLow
+
+    def getArrayHigh(self) -> npt.ArrayLike:
+        """
+        Returns the upper end point of the Box instance
+        :return: (arrayHigh -> npt.ArrayLike)
+        One dimensional array for the upper end point fo the box
+        """
+        # The following line are for just returning (not for implementation)
+        arrayHigh: npt.ArrayLike = np.array([], dtype=object)
+        return arrayHigh
+
+    ############################################
+    ### Unused Methods from ISS ################
+    ############################################
+    def getIMatBasisV(self) -> IntervalMatrix:
+        """
+        Return Basis interval matrix
+        :return: (objIMBasisV -> IntervalMatrix )
+        """
+        # The following line are for just returning (not for implementation)
+        objIM: IntervalMatrix = IntervalMatrix(None, None)
+        return objIM
+
+    ############################################
+    ########### Unused Common Methods ##########
+    ############################################
+    def convexHull(self, objSet: Set) -> Set:
+        """
+        Construct an instance of Box representing convex hull of two Interval Star Sets,
+        that is, self and objSet
+        :param objSet: an instance of Set class
+        :type objSet: Set
+        :return: (objSetCH -> Set) an instance of Set for convex hull
+        """
+        # The following line are for just returning (not for implementation)
+        objSetCH: Set = StarSet(None, None, None)
+
+        return objSetCH
+
+    def getSameSignPartition(self) -> List[Set]:
+        """
+        Partition a set in such a way that for each sub set,
+        values in each dimension will have the same sign
+        :return: (listSets -> List[Set]) list of subsets
+        """
+        # The following line are for just returning (not for implementation)
+        listSets: List[Set] = []
+
+        return listSets
+
+    def getSign(self) -> List[Sign]:
+        """
+        Returns the list of Sign instances for all
+        the dimensions of the set
+        :return: (listSigns -> List[Sign])
+        """
+        # The following line are for just returning (not for implementation)
+        listSigns: List[Sign] = []
+
+        return listSigns
+
+    def toAbsolute(self) -> npt.ArrayLike:
+        """
+        Returns the absolute value of the set
+        :return: (arrayPoint -> npt.ArrayLike)
+        """
+        # The following line are for just returning (not for implementation)
+        arrayPoint: npt.ArrayLike = np.array([], dtype=object)
+
+        return arrayPoint
+
+    def display(self) -> str:
+        """
+        Display the set
+        :return: None
+        """
+        # The following line are for just returning (not for implementation)
+
+        return ""

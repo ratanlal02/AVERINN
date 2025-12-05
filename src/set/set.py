@@ -37,16 +37,26 @@ class Set(metaclass=ABCMeta):
         """
         pass
 
-    ###############################################################
-    ##### Methods related to attribute of the IntervalStarSet #####
-    ###############################################################
+    ###########################################################################
+    ##### Methods related to attribute of the IntervalStarSet and StarSet #####
+    ###########################################################################
+    # Only for ISS
     @abstractmethod
-    def getMatBasisV(self) -> IntervalMatrix:
+    def getIMatBasisV(self) -> IntervalMatrix:
         """
         Return Basis interval matrix
         :return: (objIMBasisV -> IntervalMatrix )
         """
         pass
+
+    # Only for SS
+    def getMatBasisV(self) -> npt.ArrayLike:
+        """
+        Return Basis interval matrix
+        :return: (matBasisV -> npt.ArrayLike)
+        """
+        pass
+
 
     @abstractmethod
     def getMatConstraintC(self) -> npt.ArrayLike:
